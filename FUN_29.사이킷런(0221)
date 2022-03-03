@@ -1,0 +1,719 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ce8f5349",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "$ mkdir -p ~/aiffel/movie_recommendation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "15c2abb2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 29-3 (1) numpy 활용\n",
+    "import numpy as np\n",
+    "\n",
+    "t1 = np.array([1, 1, 1])\n",
+    "t2 = np.array([2, 0, 1])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "d6d0f2be",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 코사인 유사도 구하는 함수 만들기\n",
+    "from numpy import dot\n",
+    "from numpy.linalg import norm\n",
+    "def cos_sim(A, B):\n",
+    "    return dot(A, B) /(norm(A) * norm(B))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "a030cac3",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.7745966692414834"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "cos_sim(t1, t2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "588bf321",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 사이킷런 활용\n",
+    "from sklearn.metrics.pairwise import cosine_similarity"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "3bff52ee",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "array([[0.77459667]])"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 2 차원 배열 정의해주기\n",
+    "t1 = np.array([[1, 1, 1]])\n",
+    "t2 = np.array([[2, 0, 1]])\n",
+    "cosine_similarity(t1, t2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "cbd554a0",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "슝=3\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 29-5  콘텐츠 기반 필터링 실습\n",
+    "# 필요한 모듈 import\n",
+    "\n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "from sklearn.feature_extraction.text import CountVectorizer\n",
+    "from sklearn.metrics.pairwise import cosine_similarity\n",
+    "\n",
+    "print(\"슝=3\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "id": "4b4f1a31",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# https://d3s0tskafalll9.cloudfront.net/media/documents/movie_dataset.csv"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e963fb85",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "wget https://aiffelstaticprd.blob.core.windows.net/media/documents/movie_dataset.csv\n",
+    "mv movie_dataset.csv  ~/aiffel/movie_recommendation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "d5bf1c31",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>index</th>\n",
+       "      <th>budget</th>\n",
+       "      <th>genres</th>\n",
+       "      <th>homepage</th>\n",
+       "      <th>id</th>\n",
+       "      <th>keywords</th>\n",
+       "      <th>original_language</th>\n",
+       "      <th>original_title</th>\n",
+       "      <th>overview</th>\n",
+       "      <th>popularity</th>\n",
+       "      <th>...</th>\n",
+       "      <th>runtime</th>\n",
+       "      <th>spoken_languages</th>\n",
+       "      <th>status</th>\n",
+       "      <th>tagline</th>\n",
+       "      <th>title</th>\n",
+       "      <th>vote_average</th>\n",
+       "      <th>vote_count</th>\n",
+       "      <th>cast</th>\n",
+       "      <th>crew</th>\n",
+       "      <th>director</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>0</td>\n",
+       "      <td>237000000</td>\n",
+       "      <td>Action Adventure Fantasy Science Fiction</td>\n",
+       "      <td>http://www.avatarmovie.com/</td>\n",
+       "      <td>19995</td>\n",
+       "      <td>culture clash future space war space colony so...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>In the 22nd century, a paraplegic Marine is di...</td>\n",
+       "      <td>150.437577</td>\n",
+       "      <td>...</td>\n",
+       "      <td>162.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}, {\"iso...</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>Enter the World of Pandora.</td>\n",
+       "      <td>Avatar</td>\n",
+       "      <td>7.2</td>\n",
+       "      <td>11800</td>\n",
+       "      <td>Sam Worthington Zoe Saldana Sigourney Weaver S...</td>\n",
+       "      <td>[{'name': 'Stephen E. Rivkin', 'gender': 0, 'd...</td>\n",
+       "      <td>James Cameron</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1</td>\n",
+       "      <td>300000000</td>\n",
+       "      <td>Adventure Fantasy Action</td>\n",
+       "      <td>http://disney.go.com/disneypictures/pirates/</td>\n",
+       "      <td>285</td>\n",
+       "      <td>ocean drug abuse exotic island east india trad...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>Captain Barbossa, long believed to be dead, ha...</td>\n",
+       "      <td>139.082615</td>\n",
+       "      <td>...</td>\n",
+       "      <td>169.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}]</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>At the end of the world, the adventure begins.</td>\n",
+       "      <td>Pirates of the Caribbean: At World's End</td>\n",
+       "      <td>6.9</td>\n",
+       "      <td>4500</td>\n",
+       "      <td>Johnny Depp Orlando Bloom Keira Knightley Stel...</td>\n",
+       "      <td>[{'name': 'Dariusz Wolski', 'gender': 2, 'depa...</td>\n",
+       "      <td>Gore Verbinski</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>2</td>\n",
+       "      <td>245000000</td>\n",
+       "      <td>Action Adventure Crime</td>\n",
+       "      <td>http://www.sonypictures.com/movies/spectre/</td>\n",
+       "      <td>206647</td>\n",
+       "      <td>spy based on novel secret agent sequel mi6</td>\n",
+       "      <td>en</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>A cryptic message from Bond’s past sends him o...</td>\n",
+       "      <td>107.376788</td>\n",
+       "      <td>...</td>\n",
+       "      <td>148.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"fr\", \"name\": \"Fran\\u00e7ais\"},...</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>A Plan No One Escapes</td>\n",
+       "      <td>Spectre</td>\n",
+       "      <td>6.3</td>\n",
+       "      <td>4466</td>\n",
+       "      <td>Daniel Craig Christoph Waltz L\\u00e9a Seydoux ...</td>\n",
+       "      <td>[{'name': 'Thomas Newman', 'gender': 2, 'depar...</td>\n",
+       "      <td>Sam Mendes</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>3</td>\n",
+       "      <td>250000000</td>\n",
+       "      <td>Action Crime Drama Thriller</td>\n",
+       "      <td>http://www.thedarkknightrises.com/</td>\n",
+       "      <td>49026</td>\n",
+       "      <td>dc comics crime fighter terrorist secret ident...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>Following the death of District Attorney Harve...</td>\n",
+       "      <td>112.312950</td>\n",
+       "      <td>...</td>\n",
+       "      <td>165.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}]</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>The Legend Ends</td>\n",
+       "      <td>The Dark Knight Rises</td>\n",
+       "      <td>7.6</td>\n",
+       "      <td>9106</td>\n",
+       "      <td>Christian Bale Michael Caine Gary Oldman Anne ...</td>\n",
+       "      <td>[{'name': 'Hans Zimmer', 'gender': 2, 'departm...</td>\n",
+       "      <td>Christopher Nolan</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>4</td>\n",
+       "      <td>260000000</td>\n",
+       "      <td>Action Adventure Science Fiction</td>\n",
+       "      <td>http://movies.disney.com/john-carter</td>\n",
+       "      <td>49529</td>\n",
+       "      <td>based on novel mars medallion space travel pri...</td>\n",
+       "      <td>en</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>John Carter is a war-weary, former military ca...</td>\n",
+       "      <td>43.926995</td>\n",
+       "      <td>...</td>\n",
+       "      <td>132.0</td>\n",
+       "      <td>[{\"iso_639_1\": \"en\", \"name\": \"English\"}]</td>\n",
+       "      <td>Released</td>\n",
+       "      <td>Lost in our world, found in another.</td>\n",
+       "      <td>John Carter</td>\n",
+       "      <td>6.1</td>\n",
+       "      <td>2124</td>\n",
+       "      <td>Taylor Kitsch Lynn Collins Samantha Morton Wil...</td>\n",
+       "      <td>[{'name': 'Andrew Stanton', 'gender': 2, 'depa...</td>\n",
+       "      <td>Andrew Stanton</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>5 rows × 24 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   index     budget                                    genres  \\\n",
+       "0      0  237000000  Action Adventure Fantasy Science Fiction   \n",
+       "1      1  300000000                  Adventure Fantasy Action   \n",
+       "2      2  245000000                    Action Adventure Crime   \n",
+       "3      3  250000000               Action Crime Drama Thriller   \n",
+       "4      4  260000000          Action Adventure Science Fiction   \n",
+       "\n",
+       "                                       homepage      id  \\\n",
+       "0                   http://www.avatarmovie.com/   19995   \n",
+       "1  http://disney.go.com/disneypictures/pirates/     285   \n",
+       "2   http://www.sonypictures.com/movies/spectre/  206647   \n",
+       "3            http://www.thedarkknightrises.com/   49026   \n",
+       "4          http://movies.disney.com/john-carter   49529   \n",
+       "\n",
+       "                                            keywords original_language  \\\n",
+       "0  culture clash future space war space colony so...                en   \n",
+       "1  ocean drug abuse exotic island east india trad...                en   \n",
+       "2         spy based on novel secret agent sequel mi6                en   \n",
+       "3  dc comics crime fighter terrorist secret ident...                en   \n",
+       "4  based on novel mars medallion space travel pri...                en   \n",
+       "\n",
+       "                             original_title  \\\n",
+       "0                                    Avatar   \n",
+       "1  Pirates of the Caribbean: At World's End   \n",
+       "2                                   Spectre   \n",
+       "3                     The Dark Knight Rises   \n",
+       "4                               John Carter   \n",
+       "\n",
+       "                                            overview  popularity  ... runtime  \\\n",
+       "0  In the 22nd century, a paraplegic Marine is di...  150.437577  ...   162.0   \n",
+       "1  Captain Barbossa, long believed to be dead, ha...  139.082615  ...   169.0   \n",
+       "2  A cryptic message from Bond’s past sends him o...  107.376788  ...   148.0   \n",
+       "3  Following the death of District Attorney Harve...  112.312950  ...   165.0   \n",
+       "4  John Carter is a war-weary, former military ca...   43.926995  ...   132.0   \n",
+       "\n",
+       "                                    spoken_languages    status  \\\n",
+       "0  [{\"iso_639_1\": \"en\", \"name\": \"English\"}, {\"iso...  Released   \n",
+       "1           [{\"iso_639_1\": \"en\", \"name\": \"English\"}]  Released   \n",
+       "2  [{\"iso_639_1\": \"fr\", \"name\": \"Fran\\u00e7ais\"},...  Released   \n",
+       "3           [{\"iso_639_1\": \"en\", \"name\": \"English\"}]  Released   \n",
+       "4           [{\"iso_639_1\": \"en\", \"name\": \"English\"}]  Released   \n",
+       "\n",
+       "                                          tagline  \\\n",
+       "0                     Enter the World of Pandora.   \n",
+       "1  At the end of the world, the adventure begins.   \n",
+       "2                           A Plan No One Escapes   \n",
+       "3                                 The Legend Ends   \n",
+       "4            Lost in our world, found in another.   \n",
+       "\n",
+       "                                      title vote_average vote_count  \\\n",
+       "0                                    Avatar          7.2      11800   \n",
+       "1  Pirates of the Caribbean: At World's End          6.9       4500   \n",
+       "2                                   Spectre          6.3       4466   \n",
+       "3                     The Dark Knight Rises          7.6       9106   \n",
+       "4                               John Carter          6.1       2124   \n",
+       "\n",
+       "                                                cast  \\\n",
+       "0  Sam Worthington Zoe Saldana Sigourney Weaver S...   \n",
+       "1  Johnny Depp Orlando Bloom Keira Knightley Stel...   \n",
+       "2  Daniel Craig Christoph Waltz L\\u00e9a Seydoux ...   \n",
+       "3  Christian Bale Michael Caine Gary Oldman Anne ...   \n",
+       "4  Taylor Kitsch Lynn Collins Samantha Morton Wil...   \n",
+       "\n",
+       "                                                crew           director  \n",
+       "0  [{'name': 'Stephen E. Rivkin', 'gender': 0, 'd...      James Cameron  \n",
+       "1  [{'name': 'Dariusz Wolski', 'gender': 2, 'depa...     Gore Verbinski  \n",
+       "2  [{'name': 'Thomas Newman', 'gender': 2, 'depar...         Sam Mendes  \n",
+       "3  [{'name': 'Hans Zimmer', 'gender': 2, 'departm...  Christopher Nolan  \n",
+       "4  [{'name': 'Andrew Stanton', 'gender': 2, 'depa...     Andrew Stanton  \n",
+       "\n",
+       "[5 rows x 24 columns]"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import os\n",
+    "csv_path = os.getenv('HOME')+'/aiffel/movie_recommendation/movie_dataset.csv'\n",
+    "df = pd.read_csv(csv_path)\n",
+    "df.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 29,
+   "id": "7c575954",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "Index(['index', 'budget', 'genres', 'homepage', 'id', 'keywords',\n",
+       "       'original_language', 'original_title', 'overview', 'popularity',\n",
+       "       'production_companies', 'production_countries', 'release_date',\n",
+       "       'revenue', 'runtime', 'spoken_languages', 'status', 'tagline', 'title',\n",
+       "       'vote_average', 'vote_count', 'cast', 'crew', 'director'],\n",
+       "      dtype='object')"
+      ]
+     },
+     "execution_count": 29,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#3. 특성선택\n",
+    "df.columns"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 30,
+   "id": "d88e1070",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['keyword', 'cast', 'genres', 'director']"
+      ]
+     },
+     "execution_count": 30,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "# 4개의 칼럼만 뽑아서 영화 유사도 계산 추천\n",
+    "features = ['keyword', 'cast', 'genres', 'director']\n",
+    "features\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 31,
+   "id": "6055aa79",
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0    culture clash future space war space colony so...\n",
+       "1    ocean drug abuse exotic island east india trad...\n",
+       "2    spy based on novel secret agent sequel mi6Dani...\n",
+       "3    dc comics crime fighter terrorist secret ident...\n",
+       "4    based on novel mars medallion space travel pri...\n",
+       "dtype: object"
+      ]
+     },
+     "execution_count": 31,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "def combine_features(row):\n",
+    "    return row['keywords']+\"\"+row['cast']+\"\"+row['genres']+\"\"+row['director']\n",
+    "\n",
+    "combine_features(df[:5])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "id": "42827f59",
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "KeyError",
+     "evalue": "'keyword'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+      "\u001b[0;32m/opt/conda/lib/python3.9/site-packages/pandas/core/indexes/base.py\u001b[0m in \u001b[0;36mget_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   3360\u001b[0m             \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 3361\u001b[0;31m                 \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget_loc\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mcasted_key\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   3362\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mKeyError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0merr\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m/opt/conda/lib/python3.9/site-packages/pandas/_libs/index.pyx\u001b[0m in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
+      "\u001b[0;32m/opt/conda/lib/python3.9/site-packages/pandas/_libs/index.pyx\u001b[0m in \u001b[0;36mpandas._libs.index.IndexEngine.get_loc\u001b[0;34m()\u001b[0m\n",
+      "\u001b[0;32mpandas/_libs/hashtable_class_helper.pxi\u001b[0m in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
+      "\u001b[0;32mpandas/_libs/hashtable_class_helper.pxi\u001b[0m in \u001b[0;36mpandas._libs.hashtable.PyObjectHashTable.get_item\u001b[0;34m()\u001b[0m\n",
+      "\u001b[0;31mKeyError\u001b[0m: 'keyword'",
+      "\nThe above exception was the direct cause of the following exception:\n",
+      "\u001b[0;31mKeyError\u001b[0m                                  Traceback (most recent call last)",
+      "\u001b[0;32m/tmp/ipykernel_16/1610035360.py\u001b[0m in \u001b[0;36m<module>\u001b[0;34m\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;32mfor\u001b[0m \u001b[0mfeature\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mfeatures\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 2\u001b[0;31m     \u001b[0mdf\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0mfeature\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdf\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0mfeature\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mfillna\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m''\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      3\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0mdf\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m\"combined_features\"\u001b[0m\u001b[0;34m]\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdf\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mapply\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mcombine_features\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0maxis\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m1\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0mdf\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m\"combined_features\"\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m/opt/conda/lib/python3.9/site-packages/pandas/core/frame.py\u001b[0m in \u001b[0;36m__getitem__\u001b[0;34m(self, key)\u001b[0m\n\u001b[1;32m   3456\u001b[0m             \u001b[0;32mif\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mcolumns\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mnlevels\u001b[0m \u001b[0;34m>\u001b[0m \u001b[0;36m1\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   3457\u001b[0m                 \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_getitem_multilevel\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 3458\u001b[0;31m             \u001b[0mindexer\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mcolumns\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget_loc\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   3459\u001b[0m             \u001b[0;32mif\u001b[0m \u001b[0mis_integer\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mindexer\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   3460\u001b[0m                 \u001b[0mindexer\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0mindexer\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m/opt/conda/lib/python3.9/site-packages/pandas/core/indexes/base.py\u001b[0m in \u001b[0;36mget_loc\u001b[0;34m(self, key, method, tolerance)\u001b[0m\n\u001b[1;32m   3361\u001b[0m                 \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mget_loc\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mcasted_key\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   3362\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mKeyError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0merr\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 3363\u001b[0;31m                 \u001b[0;32mraise\u001b[0m \u001b[0mKeyError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mfrom\u001b[0m \u001b[0merr\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   3364\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   3365\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mis_scalar\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0misna\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhasnans\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;31mKeyError\u001b[0m: 'keyword'"
+     ]
+    }
+   ],
+   "source": [
+    "for feature in features:\n",
+    "    df[feature] = df[feature].fillna('')\n",
+    "\n",
+    "df[\"combined_features\"] = df.apply(combine_features,axis=1)\n",
+    "df[\"combined_features\"]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "374553ed",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "cv = CountVectorizer()\n",
+    "count_matrix = cv.fit_transdorm(df[\"combined_features\"])\n",
+    "print(type(count_matrix))\n",
+    "print(count_matrix.shape)\n",
+    "print(count_matrix)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d369df18",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#  cosine_similarity matrix를 구하기\n",
+    "\n",
+    "cosine_sim = cosine_similarity(count_matrix)\n",
+    "print(cosine_sim)\n",
+    "print(cosine_sim.shape)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c23aa706",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 추천\n",
+    "def get_title_from_index(index):\n",
+    "    return df[df.index == index][\"title\"].values[0]\n",
+    "def get_index_from_title(title):\n",
+    "    return df[df.title == title][\"index\"].values[0]\n",
+    "\n",
+    "movie_user_likes = \"Avatar\"\n",
+    "movie_index =get_index_from_title(movie_user_likes)\n",
+    "similar_movies = list(enumerate(cosine_sim[movie_index]))\n",
+    "\n",
+    "sorted_similar_movies = sorted(similar_moves, key=lamda x:x[1]), reverse=True)[1:]\n",
+    "\n",
+    "i=0\n",
+    "print(movie_user_likes+\"와 비슷한 영화 3편은 \"+\"\\n\")\n",
+    "for item in sorted_similar_movies:\n",
+    "    print(get_title_from_index(item[0]))\n",
+    "    i=i+1\n",
+    "    if i==3:\n",
+    "        break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "4c7797a4",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 29-7 협업 필터링(2)\n",
+    "import numpy as np\n",
+    "from numpy.linalg import svd"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "6064132f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "np.random.seed(30)\n",
+    "A = np.random.randint(0, 100, size=(4,4))\n",
+    "A"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b7de791c",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "svd(A)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "bbeb02cb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "U, Sigma, VT =svd(A)\n",
+    "\n",
+    "print('U matrix:{}\\n'.format(U.shape), U)\n",
+    "print('Sigma: {}\\n'.format(Sigma.shape), Sigma)\n",
+    "print('V Transpose matrix: {}\\n'.format(VT.shape), VT)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "6b1584b8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "Sigma_mat =np.diag(Sigma)\n",
+    "\n",
+    "A_ = np.dot(np.dot(U, Sigma_mat), VT)\n",
+    "A_\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3017eae8",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "be3a87bd",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "205f049f",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f570845b",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "a4fa9c73",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7efdf68c",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "fbe4d3d4",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
